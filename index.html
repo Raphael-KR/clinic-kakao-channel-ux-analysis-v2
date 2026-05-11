@@ -1,0 +1,608 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script>
+(function(){
+  var __k="6c172d24-959b-405d-9085-63f1e4d960e5";
+  var __a=null;
+  var __preload=null;
+  if(!__k)return;
+  var _f=window.fetch;
+  // S3 URL → file_key 추출 후 __a 매핑 lookup → assets/ 로컬 경로 치환
+  // 응답에 새 signed URL이 와도 같은 file_key면 같은 assets/ → 영구 작동
+  function patchUrls(data){
+    if(!__a)return data;
+    try{
+      var s=JSON.stringify(data);
+      // 응답 안의 모든 S3 URL을 정규식으로 찾고, file_key 추출 → 매핑 lookup
+      s=s.replace(/https:\/\/prod-files-secure\.s3\.amazonaws\.com\/[^"\s<>]+/g,function(url){
+        var m=url.match(/\.amazonaws\.com\/([^?\\]+)/);
+        if(!m)return url;
+        var key=m[1].replace(/\\u002F/g,"/");
+        return __a[key]||url;
+      });
+      return JSON.parse(s);
+    }catch(e){return data;}
+  }
+  function callMisiso(method,path,body){
+    return _f("https://misiso.com/api/notion/deploy-proxy",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({deployKey:__k,path:path,method:method,body:body})
+    }).then(function(r){
+      var status=r.status;
+      return r.json().then(function(data){return {status:status,data:patchUrls(data)};});
+    });
+  }
+  // preload pattern — 페이지 로드와 병렬로 정적 fetch 호출 미리 시작
+  var __preloadCache={};
+  if(__preload){
+    for(var i=0;i<__preload.length;i++){
+      (function(c){
+        var key=c.method+":"+c.path+":"+(c.body?JSON.stringify(c.body):"");
+        __preloadCache[key]=callMisiso(c.method,c.path,c.body);
+      })(__preload[i]);
+    }
+  }
+  window.fetch=function(url,opts){
+    var u=typeof url==="string"?url:String(url);
+    if(!u.startsWith("/api/notion/"))return _f.apply(this,arguments);
+    var path=u.slice("/api/notion".length);
+    var method=(opts&&opts.method)||"GET";
+    var body;
+    try{body=opts&&opts.body?JSON.parse(opts.body):undefined;}catch(e){body=opts&&opts.body;}
+    var ck=method+":"+path+":"+(body?JSON.stringify(body):"");
+    var promise=__preloadCache[ck];
+    if(promise){delete __preloadCache[ck];}
+    else{promise=callMisiso(method,path,body);}
+    return promise.then(function(res){
+      return new Response(JSON.stringify(res.data),{
+        status:res.status,
+        headers:{"Content-Type":"application/json"}
+      });
+    });
+  };
+})();
+</script>
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://misiso.com" crossorigin/>
+<meta property="og:title" content="병의원 환자 카카오채널 등록 UX 설문결과 V2"/>
+<meta property="og:description" content="Opus 4.7 사용"/>
+<title>병의원 환자 카카오채널 등록 UX 설문결과 V2</title>
+<meta name="description" content="Opus 4.7 사용"/>
+<meta property="og:image" content="https://Raphael-KR.github.io/clinic-kakao-channel-ux-analysis-v2/og-image-00pt19cz.png"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://Raphael-KR.github.io/clinic-kakao-channel-ux-analysis-v2/og-image-00pt19cz.png"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2032%2032'%3E%3Crect%20width%3D'32'%20height%3D'32'%20rx%3D'6'%20fill%3D'%23f59e0b'%2F%3E%3Ctext%20x%3D'16'%20y%3D'22'%20text-anchor%3D'middle'%20font-size%3D'18'%20fill%3D'white'%20font-family%3D'sans-serif'%3EK%3C%2Ftext%3E%3C%2Fsvg%3E"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{--bg:#f8fafc;--surface:#fff;--s2:#f1f5f9;--border:#e5e7eb;--bs:#cbd5e1;--text:#0f172a;--t2:#475569;--t3:#94a3b8;--amber:#f59e0b;--as:#d97706;--ab:#fef3c7;--asoft:#fffbeb;--blue:#2563eb;--purple:#7c3aed;--green:#16a34a;--shadow:0 8px 24px -8px rgba(15,23,42,.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.6}
+.dashboard{width:min(1180px,calc(100vw - 32px));margin:0 auto;padding:24px 0 80px}
+
+/* Hero */
+.hero{display:grid;grid-template-columns:1.35fr 1fr;gap:56px;align-items:center;padding:40px 0 56px;border-bottom:1px solid var(--border);margin-bottom:56px}
+@media(max-width:860px){.hero{grid-template-columns:1fr;gap:32px;padding:24px 0 40px}}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--ab);color:var(--as);font-size:11px;font-weight:800;letter-spacing:.08em;margin-bottom:22px;text-transform:uppercase}
+.hero-eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.hero h1{font-size:clamp(30px,4.6vw,50px);font-weight:900;letter-spacing:-.04em;line-height:1.12;margin-bottom:22px}
+.hero h1 .accent{color:var(--amber)}
+.hero-sub{color:var(--t2);font-size:15.5px;line-height:1.7;margin-bottom:24px;max-width:540px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px}
+.hero-meta .chip{font-size:12px;font-weight:700;color:var(--t2);background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:999px}
+.hero-vis{position:relative;aspect-ratio:1;max-width:340px;margin:0 auto}
+.hero-donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.hero-donut-label{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--t3);text-transform:uppercase;margin-bottom:4px}
+.hero-donut-value{font-size:48px;font-weight:900;letter-spacing:-.04em;color:var(--amber);line-height:1.05}
+.hero-donut-value span{font-size:22px;margin-left:2px;font-weight:800}
+.hero-donut-sub{font-size:12px;color:var(--t2);font-weight:600;margin-top:4px}
+
+/* Section */
+.section{margin-bottom:64px}
+.section-head-wrap{margin-bottom:22px}
+.section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+.section-num{font-family:'JetBrains Mono','SF Mono',Menlo,monospace;font-size:13px;font-weight:800;color:var(--amber);letter-spacing:.04em}
+.section-title{font-size:24px;font-weight:900;letter-spacing:-.02em;color:var(--text)}
+.section-desc{color:var(--t2);font-size:13.5px;margin:0}
+
+/* Utils */
+.amber{color:var(--amber)}.blue{color:var(--blue)}.purple{color:var(--purple)}.green{color:var(--green)}
+.t2,.text-2{color:var(--t2)}.t3,.text-3{color:var(--t3)}.bold{font-weight:800}
+
+/* Question */
+.q-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:12px;padding:22px 26px;margin-bottom:18px}
+.q-label{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--as);text-transform:uppercase;margin-bottom:8px}
+.q-block p{font-size:14.5px;line-height:1.75;color:var(--text)}
+.q-block p strong{font-weight:700}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:18px}
+.legend .item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2)}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block}
+.dot.inline{width:8px;height:8px;margin-right:8px;vertical-align:middle}
+.dot-blue{background:var(--blue)}.dot-amber{background:var(--amber)}.dot-purple{background:var(--purple)}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.kpi-grid{grid-template-columns:1fr}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;transition:transform .2s,box-shadow .2s,border-color .2s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--bs)}
+.kpi.featured{background:var(--asoft);border-color:var(--amber);box-shadow:0 0 0 4px rgba(245,158,11,.08)}
+.kpi.featured:hover{box-shadow:0 0 0 4px rgba(245,158,11,.12),var(--shadow)}
+.kpi .label{font-size:11px;font-weight:800;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.kpi .value{font-size:26px;font-weight:900;letter-spacing:-.03em;line-height:1.15}
+.kpi .value.rank-summary{font-size:18px}
+.kpi .value .unit{font-size:13px;font-weight:700;color:var(--t3);margin-left:2px}
+.kpi .rank-sep{color:var(--t3);font-size:13px;font-weight:700;margin:0 2px}
+.kpi .sub{font-size:12px;color:var(--t2);margin-top:8px;font-weight:500}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.panel-head h3{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--text)}
+.panel-head .desc{font-size:12px;color:var(--t3);margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:860px){.grid-2{grid-template-columns:1fr}}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:720px){.grid-3{grid-template-columns:1fr}}
+.chart-wrap{position:relative;width:100%}
+.chart-wrap.donut{max-width:280px;margin:8px auto 0}
+.chart-wrap.timeline{height:280px}
+
+/* Help & Popover */
+.help-anchor{position:relative;flex-shrink:0}
+.help-btn{width:26px;height:26px;border-radius:50%;background:var(--s2);border:1.5px solid var(--bs);color:var(--t2);font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .18s}
+.help-btn:hover{background:var(--ab);border-color:var(--amber);color:var(--as)}
+.help-btn.active{background:var(--amber);border-color:var(--amber);color:#fff}
+.popover{position:absolute;z-index:100;top:calc(100% + 12px);right:-8px;width:340px;max-width:92vw;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;box-shadow:0 20px 48px -8px rgba(15,23,42,.18);font-size:13px;line-height:1.65;color:var(--t2);opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s,transform .18s,visibility .18s}
+.popover.show{opacity:1;visibility:visible;transform:translateY(0)}
+.popover::before{content:'';position:absolute;top:-7px;right:18px;width:12px;height:12px;background:var(--surface);border-left:1px solid var(--border);border-top:1px solid var(--border);transform:rotate(45deg)}
+.pop-title{font-size:13px;font-weight:800;color:var(--as);margin-bottom:10px}
+.pop-body{color:var(--t2);font-size:13px}
+.pop-body strong{color:var(--text);font-weight:700}
+.pop-result{margin-top:12px;padding:10px 12px;background:var(--s2);border-radius:8px;font-size:12.5px;line-height:1.6;color:var(--text)}
+.pop-result strong{color:var(--green)}
+.pop-note{margin-top:10px;font-size:12px;color:var(--t3);line-height:1.55}
+
+/* Matrix */
+.matrix-wrap{overflow-x:auto}
+.matrix{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.matrix th,.matrix td{padding:14px 16px;text-align:center}
+.matrix thead th{background:var(--s2);color:var(--t2);font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.matrix thead th:first-child{border-radius:10px 0 0 0;text-align:left}
+.matrix thead th:last-child{border-radius:0 10px 0 0}
+.matrix tbody td{border-bottom:1px solid var(--border)}
+.matrix tbody tr:last-child td{border-bottom:none}
+.matrix tbody td:first-child{text-align:left;font-weight:700;color:var(--text);white-space:nowrap}
+.matrix .bar-cell{position:relative;min-width:150px}
+.bar-bg{position:absolute;top:50%;transform:translateY(-50%);left:16px;height:28px;border-radius:6px;opacity:.2}
+.bg-blue{background:var(--blue)}.bg-amber{background:var(--amber)}.bg-purple{background:var(--purple)}
+.w-1-8{width:calc((100% - 32px) * 0.018)}
+.w-14-7{width:calc((100% - 32px) * 0.147)}
+.w-33-5{width:calc((100% - 32px) * 0.335)}
+.w-51-8{width:calc((100% - 32px) * 0.518)}
+.w-64-7{width:calc((100% - 32px) * 0.647)}
+.w-83-5{width:calc((100% - 32px) * 0.835)}
+.bar-text{position:relative;z-index:1;font-weight:800;font-size:14px;color:var(--text)}
+.bar-pct{position:relative;z-index:1;font-size:11px;color:var(--t3);margin-left:6px}
+.matrix .winner{background:var(--asoft)}
+.matrix .winner td{border-bottom-color:rgba(245,158,11,.2)}
+
+/* Condorcet */
+.match{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 18px;text-align:center;transition:transform .2s,box-shadow .2s}
+.match:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.match.win{background:var(--asoft);border-color:var(--amber)}
+.match .vs{font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.match .score{font-size:28px;font-weight:900;letter-spacing:-.02em;line-height:1.2}
+.match .winner-label{margin-top:10px;font-size:12px;font-weight:800;color:var(--as)}
+.match .winner-label.blue-label{color:var(--blue)}
+.cond-foot{margin-top:16px;font-size:13px;color:var(--t2);text-align:center}
+.cond-foot strong{font-weight:800}
+
+/* Consensus */
+.consensus-panel{padding:32px 28px}
+.consensus-head{text-align:center;margin-bottom:22px}
+.consensus-eyebrow{font-size:11px;font-weight:800;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
+.consensus-title{font-size:22px;font-weight:900;letter-spacing:-.02em;margin-top:6px}
+.gauge-wrap{max-width:520px;margin:0 auto}
+.gauge-track{position:relative;height:36px;background:var(--s2);border-radius:18px;overflow:hidden;border:1px solid var(--border)}
+.gauge-fill{position:absolute;left:0;top:0;height:100%;width:55%;background:linear-gradient(90deg,#ef4444 0%,var(--amber) 50%,var(--green) 100%);border-radius:18px}
+.gauge-marker{position:absolute;left:55%;top:50%;transform:translate(-50%,-50%);width:4px;height:50px;background:var(--text);border-radius:2px;box-shadow:0 0 0 3px var(--surface),0 4px 12px rgba(15,23,42,.25)}
+.gauge-ticks{display:flex;justify-content:space-between;margin-top:12px;font-size:11px;color:var(--t3);font-weight:600}
+.consensus-split{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:520px;margin:28px auto 0}
+@media(max-width:540px){.consensus-split{grid-template-columns:1fr}}
+.consensus-cell{background:var(--s2);border-radius:12px;padding:20px 18px;text-align:center}
+.consensus-cell .big{font-size:28px;font-weight:900;letter-spacing:-.02em;line-height:1.1}
+.consensus-cell .big .unit{font-size:16px;font-weight:800;margin-left:2px;color:var(--t3)}
+.consensus-cell .note{font-size:12.5px;color:var(--t2);margin-top:8px;line-height:1.5}
+.consensus-cell .note strong{color:var(--text);font-weight:700}
+.consensus-foot{text-align:center;font-size:12.5px;color:var(--t3);margin-top:18px}
+
+/* Recommendation */
+.rec-card{background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border:1px solid var(--amber);border-radius:18px;padding:36px 28px;text-align:center}
+.rec-tag{display:inline-block;padding:5px 16px;border-radius:999px;background:var(--amber);color:#fff;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px}
+.rec-flow{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:24px}
+.rec-step{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 26px;text-align:center;min-width:180px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.rec-step.primary{background:var(--amber);border-color:var(--as);color:#fff;box-shadow:0 8px 24px -6px rgba(245,158,11,.45)}
+.rec-step .role{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.rec-step.primary .role{color:rgba(255,255,255,.85)}
+.rec-step .name{font-size:20px;font-weight:900;letter-spacing:-.02em}
+.rec-step.primary .name{color:#fff}
+.rec-step .target{font-size:12px;color:var(--t2);margin-top:4px}
+.rec-step.primary .target{color:rgba(255,255,255,.9)}
+.rec-plus{font-size:22px;font-weight:800;color:var(--t3)}
+.rec-note{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.65;color:var(--t2);max-width:540px;margin:0 auto;text-align:left}
+.rec-note .plus-mark{color:var(--green);font-weight:900;font-size:18px;line-height:1;flex-shrink:0;margin-top:1px}
+.rec-note strong{color:var(--text);font-weight:700}
+.rec-note .credit{color:var(--t3);font-size:11.5px}
+
+/* Footer */
+.footer{text-align:center;font-size:12px;color:var(--t3);margin-top:64px;padding-top:24px;border-top:1px solid var(--border);line-height:1.7}
+.footer strong{color:var(--as);font-weight:800}
+
+/* Animation */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .65s ease-out backwards}
+.hero.fade-up{animation-delay:.05s}
+.section.fade-up:nth-of-type(1){animation-delay:.1s}
+.section.fade-up:nth-of-type(2){animation-delay:.15s}
+.section.fade-up:nth-of-type(3){animation-delay:.2s}
+.section.fade-up:nth-of-type(4){animation-delay:.25s}
+</style>
+</head><body><rect width='32' height='32' rx='7' fill='%23f59e0b'/><text x='16' y='22' text-anchor='middle' font-size='18' fill='white' font-family='sans-serif' font-weight='800'>K</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<main class="dashboard">
+  <section class="hero fade-up">
+    <div>
+      <div class="hero-eyebrow">현장 기본값으로 굳혀도 좋다</div>
+      <h1>내원 환자 카카오채널 등록,<br>가장 적절한 방식은 <span class="accent">QR 코드</span>다.</h1>
+      <p class="hero-sub">AI쓰는한의사들(실명제 단톡방) 170명 응답. QR 코드는 1위 표 83.5%, Borda 종합 1위, 어떤 상대와 붙어도 이기는 Condorcet 승자였다. 이 표본에서 통계적으로 매우 강하게 지지된다.</p>
+      <div class="hero-meta">
+        <span class="chip">설문 2026.05.10 ~ 05.11</span>
+        <span class="chip">유효 응답 170명</span>
+        <span class="chip">분석일 2026.05.11</span>
+      </div>
+    </div>
+    <div class="hero-vis">
+      <canvas id="chart-hero"></canvas>
+      <div class="hero-donut-center">
+        <div class="hero-donut-label">QR 1위 선택률</div>
+        <div class="hero-donut-value">83.5<span>%</span></div>
+        <div class="hero-donut-sub">142 / 170명</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">01 ·</span><h2 class="section-title">설문 개요</h2></div></div>
+    <div class="q-block">
+      <div class="q-label">설문 질문</div>
+      <p>내원 환자 현장 접수 워크플로에서, 모두 무조건 하는 가장 처음 단계인 <strong>환자가 우리 한의원 카카오 채널을 추가하는 단계</strong>가 1·2·3 중 고객 경험(UX) 측면에서 어떤 게 가장 적절한지, 적절한 순서대로 나열해 주세요.</p>
+    </div>
+    <div class="legend">
+      <div class="item"><span class="dot dot-blue"></span>옵션1 · 번호 등록 (태블릿 번호입력 → 알림톡 → 채널추가)</div>
+      <div class="item"><span class="dot dot-amber"></span>옵션2 · QR 코드 (QR 스캔 → 채널추가)</div>
+      <div class="item"><span class="dot dot-purple"></span>옵션3 · 카톡 검색 (카톡에서 채널 검색 → 채널추가)</div>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">02 ·</span><h2 class="section-title">핵심 결과 요약</h2></div></div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="label">총 유효 응답</div><div class="value blue">170<span class="unit">명</span></div><div class="sub">전체 171 · 불완전 1 제외</div></div>
+      <div class="kpi featured"><div class="label">1위 최다 선택</div><div class="value amber">QR 코드</div><div class="sub">83.5% · 142명</div></div>
+      <div class="kpi"><div class="label">종합 점수 1위</div><div class="value green">479<span class="unit">점</span></div><div class="sub">QR 코드 · Borda Count</div></div>
+      <div class="kpi"><div class="label">응답자 합의도</div><div class="value purple">0.55</div><div class="sub">Kendall's W · 중간 합의</div></div>
+      <div class="kpi"><div class="label">최종 선호 순위</div><div class="value rank-summary"><span class="amber">QR</span><span class="rank-sep"> &gt; </span><span class="blue">번호</span><span class="rank-sep"> &gt; </span><span class="purple">검색</span></div><div class="sub">이 표본에서 강하게 지지됨</div></div>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">03 ·</span><h2 class="section-title">선호도 분포</h2></div></div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h3>1위 선택 분포</h3><div class="desc">170명 응답자의 1순위 선택 빈도</div></div>
+          <div class="help-anchor">
+            <button class="help-btn" aria-label="통계 설명">?</button>
+            <div class="popover">
+              <div class="pop-title">빈도 분석 + 카이제곱 적합도 검정</div>
+              <div class="pop-body">142명(83.5%)이 QR을 1위로 골랐다. 170명이 무작위로 답했다면 각 옵션에 약 57명씩 나와야 하는데, 실제(25 / 142 / 3)와의 차이가 우연인지를 <strong>카이제곱 적합도 검정</strong>으로 확인한다.</div>
+              <div class="pop-result">χ² = 197.02, df = 2, p &lt; 0.001 → <strong>이 표본에서 우연으로 보기 매우 어려운 쏠림</strong>.</div>
+              <div class="pop-note">p값은 결과가 우연일 확률. p &lt; 0.001은 매우 강한 증거지만 '확정'을 의미하지 않는다.</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-wrap donut"><canvas id="chart-donut"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div><h3>Borda Count 종합 점수</h3><div class="desc">1위=3점 · 2위=2점 · 3위=1점 가중 합산</div></div>
+          <div class="help-anchor">
+            <button class="help-btn" aria-label="통계 설명">?</button>
+            <div class="popover">
+              <div class="pop-title">Borda Count (선호도 가중 점수)</div>
+              <div class="pop-body">1위 표만 보면 놓치는 정보를 잡아준다. 번호 등록은 1위 표는 25명뿐이지만 <strong>2위 표가 88명</strong>이라 308점으로 종합 2위를 차지한다.</div>
+              <div class="pop-result">QR 479점 &gt; 번호 등록 308점 &gt; 카톡 검색 233점</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-borda"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">04 ·</span><h2 class="section-title">순위별 분포 매트릭스</h2></div></div>
+    <div class="panel">
+      <div class="panel-head">
+        <div><h3>옵션별 1위 · 2위 · 3위 분포</h3><div class="desc">평균 순위가 낮을수록 선호도가 높다.</div></div>
+        <div class="help-anchor">
+          <button class="help-btn" aria-label="통계 설명">?</button>
+          <div class="popover">
+            <div class="pop-title">Friedman 검정 + Kendall's W</div>
+            <div class="pop-body"><strong>Friedman 검정</strong>은 1·2·3위 순위 전체로 "세 옵션의 순위가 진짜 다른가"를 검정한다. <strong>Kendall's W</strong>는 응답자들의 의견 일치도(0 제각각 ~ 1 완전합의)를 나타낸다.</div>
+            <div class="pop-result">Friedman χ² = 187.02, p &lt; 0.001 / Kendall's W = 0.55 → <strong>이 표본에서 순위 차이가 강하게 지지됨</strong>. 1위(QR)는 거의 일치하나 2위(번호 88 vs 검색 57)에서 의견이 나뉘어 W가 중간값.</div>
+          </div>
+        </div>
+      </div>
+      <div class="matrix-wrap">
+        <table class="matrix">
+          <thead><tr><th>옵션</th><th>1위</th><th>2위</th><th>3위</th><th>평균 순위</th><th>Borda</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="dot dot-blue inline"></span>옵션1 · 번호 등록</td>
+              <td class="bar-cell"><div class="bar-bg bg-blue w-14-7"></div><span class="bar-text">25</span><span class="bar-pct">14.7%</span></td>
+              <td class="bar-cell"><div class="bar-bg bg-blue w-51-8"></div><span class="bar-text">88</span><span class="bar-pct">51.8%</span></td>
+              <td class="bar-cell"><div class="bar-bg bg-blue w-33-5"></div><span class="bar-text">57</span><span class="bar-pct">33.5%</span></td>
+              <td><strong>2.19</strong></td><td>308</td>
+            </tr>
+            <tr class="winner">
+              <td><span class="dot dot-amber inline"></span>옵션2 · QR 코드</td>
+              <td class="bar-cell"><div class="bar-bg bg-amber w-83-5"></div><span class="bar-text">142</span><span class="bar-pct">83.5%</span></td>
+              <td class="bar-cell"><div class="bar-bg bg-amber w-14-7"></div><span class="bar-text">25</span><span class="bar-pct">14.7%</span></td>
+              <td class="bar-cell"><div class="bar-bg bg-amber w-1-8"></div><span class="bar-text">3</span><span class="bar-pct">1.8%</span></td>
+              <td><strong class="amber">1.18</strong></td><td class="amber bold">479</td>
+            </tr>
+            <tr>
+              <td><span class="dot dot-purple inline"></span>옵션3 · 카톡 검색</td>
+              <td class="bar-cell"><div class="bar-bg bg-purple w-1-8"></div><span class="bar-text">3</span><span class="bar-pct">1.8%</span></td>
+              <td class="bar-cell"><div class="bar-bg bg-purple w-33-5"></div><span class="bar-text">57</span><span class="bar-pct">33.5%</span></td>
+              <td class="bar-cell"><div class="bar-bg bg-purple w-64-7"></div><span class="bar-text">110</span><span class="bar-pct">64.7%</span></td>
+              <td><strong>2.63</strong></td><td>233</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">05 ·</span><h2 class="section-title">쌍대비교 (Condorcet)</h2></div></div>
+    <div class="panel">
+      <div class="panel-head">
+        <div><h3>두 옵션만 놓고 비교했을 때의 승부</h3><div class="desc">어떤 상대와 붙어도 이기는 옵션이 Condorcet 승자다.</div></div>
+        <div class="help-anchor">
+          <button class="help-btn" aria-label="통계 설명">?</button>
+          <div class="popover">
+            <div class="pop-title">Condorcet 쌍대비교</div>
+            <div class="pop-body">세 쌍(번호 vs QR / 번호 vs 검색 / QR vs 검색)을 각각 두 옵션만 두고 어느 쪽이 더 앞에 있는지 카운트한다. 어떤 상대와 붙어도 이기면 <strong>Condorcet 승자</strong>.</div>
+            <div class="pop-result">세 쌍 모두 동일한 결론: <strong>QR &gt; 번호 등록 &gt; 카톡 검색</strong>. 이 표본에서 통계적으로 매우 강하게 지지됨.</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="match win"><div class="vs">번호 등록 vs QR 코드</div><div class="score"><span class="blue">27</span><span class="text-3"> : </span><span class="amber">143</span></div><div class="winner-label">QR 코드 압승</div></div>
+        <div class="match"><div class="vs">번호 등록 vs 카톡 검색</div><div class="score"><span class="blue">111</span><span class="text-3"> : </span><span class="purple">59</span></div><div class="winner-label blue-label">번호 등록 승리</div></div>
+        <div class="match win"><div class="vs">QR 코드 vs 카톡 검색</div><div class="score"><span class="amber">166</span><span class="text-3"> : </span><span class="purple">4</span></div><div class="winner-label">QR 코드 압승</div></div>
+      </div>
+      <p class="cond-foot">QR 코드가 모든 쌍에서 승리한 <strong class="amber">Condorcet 승자</strong>.</p>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-head-wrap">
+      <div class="section-head"><span class="section-num">06 ·</span><h2 class="section-title">시간대별 응답 추이</h2></div>
+      <p class="section-desc">5/10 오후 15~17시 피크 + 5/11 오전 07~10시 2차 피크</p>
+    </div>
+    <div class="panel"><div class="chart-wrap timeline"><canvas id="chart-timeline"></canvas></div></div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">07 ·</span><h2 class="section-title">응답자 합의도</h2></div></div>
+    <div class="panel consensus-panel">
+      <div class="consensus-head"><div class="consensus-eyebrow">응답자 170명의 합의 수준</div><div class="consensus-title">Kendall's W = <span class="amber">0.55</span></div></div>
+      <div class="gauge-wrap">
+        <div class="gauge-track"><div class="gauge-fill"></div><div class="gauge-marker"></div></div>
+        <div class="gauge-ticks"><span>0 · 제각각</span><span>0.55</span><span>1.0 · 완전합의</span></div>
+      </div>
+      <div class="consensus-split">
+        <div class="consensus-cell"><div class="big amber">83.5<span class="unit">%</span></div><div class="note"><strong>1위 = QR</strong><br>142 / 170명 · 거의 일치</div></div>
+        <div class="consensus-cell"><div class="big blue">88<span class="unit"> : </span>57</div><div class="note"><strong>2위 의견 분열</strong><br>번호 등록 88명 vs 카톡 검색 57명</div></div>
+      </div>
+      <p class="consensus-foot">1위(QR)에는 높은 합의 → 2·3위 경쟁에서 의견이 나뉘어 W가 0.55에 머문다.</p>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">08 ·</span><h2 class="section-title">실무 적용안</h2></div></div>
+    <div class="rec-card">
+      <div class="rec-tag">현장 배치 권장</div>
+      <div class="rec-flow">
+        <div class="rec-step primary"><div class="role">기본 프로세스</div><div class="name">QR 코드</div><div class="target">모든 내원 환자</div></div>
+        <div class="rec-plus">+</div>
+        <div class="rec-step"><div class="role">보조 수단</div><div class="name blue">번호 등록</div><div class="target">고령 · 디지털 약자</div></div>
+      </div>
+      <div class="rec-note"><span class="plus-mark">+</span><div><strong>NFC 태그</strong>도 훌륭한 보완재 — QR과 같은 원터치 방식이면서 개당 430원. 접수 데스크에 QR + NFC를 나란히 배치하면 커버리지를 극대화할 수 있다.<span class="credit"> (이운희 원장님 제안)</span></div></div>
+    </div>
+  </section>
+
+  <footer class="footer">AI쓰는한의사들(실명제 단톡방) · 설문 설계 및 진행: 박종웅 (AI깎는한의사)<br>통계분석: Friedman · Wilcoxon · Condorcet · Borda Count · Kendall's W · χ²<br>유효 응답 170명 · 분석일 2026.05.11 · <strong>Claude OPUS 4.7 Design Fork</strong></footer>
+</main><script>
+// 카카오채널 UX 설문 결과 — Vanilla JS + Chart.js (정적 스냅샷)
+
+const D = {
+  hours: ['12시','13시','14시','15시','16시','17시','18시','19시','20시','21시','22시','23시','00시','02시','05시','07시','08시','09시','10시','11시'],
+  counts: [8,3,12,17,29,13,4,1,4,6,6,8,6,2,1,12,18,5,14,1]
+};
+
+const C = {
+  amber: '#f59e0b',
+  amberDim: 'rgba(245,158,11,0.5)',
+  amberFaint: 'rgba(245,158,11,0.2)',
+  blue: '#2563eb',
+  purple: '#7c3aed',
+  green: '#16a34a',
+  text: '#0f172a',
+  text2: '#475569',
+  text3: '#94a3b8',
+  gridLine: 'rgba(148,163,184,0.15)'
+};
+
+function initHeroChart() {
+  const el = document.getElementById('chart-hero');
+  if (!el || typeof Chart === 'undefined') return;
+  new Chart(el, {
+    type: 'doughnut',
+    data: {
+      labels: ['QR 코드','번호 등록','카톡 검색'],
+      datasets: [{ data: [142, 25, 3], backgroundColor: [C.amber, C.blue, C.purple], borderWidth: 0, hoverOffset: 12 }]
+    },
+    options: {
+      cutout: '68%', responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ' ' + ctx.label + ': ' + ctx.parsed + '명 (' + (ctx.parsed/170*100).toFixed(1) + '%)' } }
+      },
+      animation: { animateRotate: true, duration: 1100 }
+    }
+  });
+}
+
+function initDonutChart() {
+  const el = document.getElementById('chart-donut');
+  if (!el || typeof Chart === 'undefined') return;
+  new Chart(el, {
+    type: 'doughnut',
+    data: {
+      labels: ['QR 코드 142명 (83.5%)', '번호 등록 25명 (14.7%)', '카톡 검색 3명 (1.8%)'],
+      datasets: [{ data: [142, 25, 3], backgroundColor: [C.amber, C.blue, C.purple], borderWidth: 0, hoverOffset: 10 }]
+    },
+    options: {
+      cutout: '55%', responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: C.text2 } }
+      }
+    }
+  });
+}
+
+function initBordaChart() {
+  const el = document.getElementById('chart-borda');
+  if (!el || typeof Chart === 'undefined') return;
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: ['QR 코드', '번호 등록', '카톡 검색'],
+      datasets: [{ data: [479, 308, 233], backgroundColor: [C.amber, C.blue, C.purple], borderRadius: 8, barThickness: 36 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ' ' + ctx.parsed.x + '점' } } },
+      scales: {
+        x: { grid: { color: C.gridLine }, min: 0, max: 520, ticks: { color: C.text3 } },
+        y: { grid: { display: false }, ticks: { color: C.text, font: { size: 13, weight: '700' } } }
+      }
+    },
+    plugins: [{
+      id: 'borda-labels',
+      afterDatasetsDraw(chart) {
+        const ctx = chart.ctx;
+        chart.getDatasetMeta(0).data.forEach((bar, i) => {
+          const val = chart.data.datasets[0].data[i];
+          ctx.fillStyle = C.text;
+          ctx.font = 'bold 13px -apple-system, sans-serif';
+          ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+          ctx.fillText(val + '점', bar.x + 8, bar.y);
+        });
+      }
+    }]
+  });
+}
+
+function initTimelineChart() {
+  const el = document.getElementById('chart-timeline');
+  if (!el || typeof Chart === 'undefined') return;
+  const colors = D.counts.map(v => v >= 15 ? C.amber : v >= 8 ? C.amberDim : C.amberFaint);
+  new Chart(el, {
+    type: 'bar',
+    data: { labels: D.hours, datasets: [{ data: D.counts, backgroundColor: colors, borderRadius: 4, barPercentage: 0.85 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ' ' + ctx.parsed.y + '명' } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: C.text3, font: { size: 10 } }, title: { display: true, text: '5/10 12시  ←  →  5/11 11시', color: C.text3, font: { size: 11 } } },
+        y: { grid: { color: C.gridLine }, ticks: { color: C.text3 }, min: 0, title: { display: true, text: '응답 수 (명)', color: C.text3, font: { size: 11 } } }
+      }
+    },
+    plugins: [{
+      id: 'timeline-labels',
+      afterDatasetsDraw(chart) {
+        const ctx = chart.ctx;
+        chart.getDatasetMeta(0).data.forEach((bar, i) => {
+          const v = D.counts[i];
+          if (v >= 10) {
+            ctx.fillStyle = C.text;
+            ctx.font = 'bold 10px -apple-system, sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillText(v, bar.x, bar.y - 4);
+          }
+        });
+      }
+    }]
+  });
+}
+
+function initPopovers() {
+  const anchors = document.querySelectorAll('.help-anchor');
+  function closeAll() {
+    document.querySelectorAll('.help-btn.active').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.popover.show').forEach(p => p.classList.remove('show'));
+  }
+  anchors.forEach(anchor => {
+    const btn = anchor.querySelector('.help-btn');
+    const pop = anchor.querySelector('.popover');
+    if (!btn || !pop) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = btn.classList.contains('active');
+      closeAll();
+      if (!isOpen) {
+        btn.classList.add('active');
+        pop.classList.add('show');
+      }
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.help-anchor')) closeAll();
+  });
+}
+
+function init() {
+  initHeroChart();
+  initDonutChart();
+  initBordaChart();
+  initTimelineChart();
+  initPopovers();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body></html>
