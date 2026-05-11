@@ -67,11 +67,11 @@
 <meta property="og:description" content="Opus 4.7 사용"/>
 <title>병의원 환자 카카오채널 등록 UX 설문결과 V2</title>
 <meta name="description" content="Opus 4.7 사용"/>
-<meta property="og:image" content="https://Raphael-KR.github.io/clinic-kakao-channel-ux-analysis-v2/og-image-00pt19cz.png"/>
+<meta property="og:image" content="https://Raphael-KR.github.io/clinic-kakao-channel-ux-analysis-v2/og-image-002lcdu3.png"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:image" content="https://Raphael-KR.github.io/clinic-kakao-channel-ux-analysis-v2/og-image-00pt19cz.png"/>
+<meta name="twitter:image" content="https://Raphael-KR.github.io/clinic-kakao-channel-ux-analysis-v2/og-image-002lcdu3.png"/>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2032%2032'%3E%3Crect%20width%3D'32'%20height%3D'32'%20rx%3D'6'%20fill%3D'%23f59e0b'%2F%3E%3Ctext%20x%3D'16'%20y%3D'22'%20text-anchor%3D'middle'%20font-size%3D'18'%20fill%3D'white'%20font-family%3D'sans-serif'%3EK%3C%2Ftext%3E%3C%2Fsvg%3E"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -101,8 +101,8 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
 /* Section */
 .section{margin-bottom:64px}
 .section-head-wrap{margin-bottom:22px}
-.section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
-.section-num{font-family:'JetBrains Mono','SF Mono',Menlo,monospace;font-size:13px;font-weight:800;color:var(--amber);letter-spacing:.04em}
+.section-head{display:flex;align-items:center;gap:12px;margin-bottom:4px;flex-wrap:wrap}
+.section-num{display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;background:var(--ab);color:var(--as);font-family:'JetBrains Mono','SF Mono',Menlo,monospace;font-size:12px;font-weight:800;letter-spacing:.08em}
 .section-title{font-size:24px;font-weight:900;letter-spacing:-.02em;color:var(--text)}
 .section-desc{color:var(--t2);font-size:13.5px;margin:0}
 
@@ -208,7 +208,7 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
 .consensus-title{font-size:22px;font-weight:900;letter-spacing:-.02em;margin-top:6px}
 .gauge-wrap{max-width:520px;margin:0 auto}
 .gauge-track{position:relative;height:36px;background:var(--s2);border-radius:18px;overflow:hidden;border:1px solid var(--border)}
-.gauge-fill{position:absolute;left:0;top:0;height:100%;width:55%;background:linear-gradient(90deg,#ef4444 0%,var(--amber) 50%,var(--green) 100%);border-radius:18px}
+.gauge-fill{position:absolute;left:0;top:0;height:100%;width:100%;background:linear-gradient(90deg,#ef4444 0%,var(--amber) 50%,var(--green) 100%);border-radius:18px}
 .gauge-marker{position:absolute;left:55%;top:50%;transform:translate(-50%,-50%);width:4px;height:50px;background:var(--text);border-radius:2px;box-shadow:0 0 0 3px var(--surface),0 4px 12px rgba(15,23,42,.25)}
 .gauge-ticks{display:flex;justify-content:space-between;margin-top:12px;font-size:11px;color:var(--t3);font-weight:600}
 .consensus-split{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:520px;margin:28px auto 0}
@@ -277,7 +277,7 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
   </section>
 
   <section class="section fade-up">
-    <div class="section-head-wrap"><div class="section-head"><span class="section-num">01 ·</span><h2 class="section-title">설문 개요</h2></div></div>
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">01</span><h2 class="section-title">설문 개요</h2></div></div>
     <div class="q-block">
       <div class="q-label">설문 질문</div>
       <p>내원 환자 현장 접수 워크플로에서, 모두 무조건 하는 가장 처음 단계인 <strong>환자가 우리 한의원 카카오 채널을 추가하는 단계</strong>가 1·2·3 중 고객 경험(UX) 측면에서 어떤 게 가장 적절한지, 적절한 순서대로 나열해 주세요.</p>
@@ -290,7 +290,7 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
   </section>
 
   <section class="section fade-up">
-    <div class="section-head-wrap"><div class="section-head"><span class="section-num">02 ·</span><h2 class="section-title">핵심 결과 요약</h2></div></div>
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">02</span><h2 class="section-title">핵심 결과 요약</h2></div></div>
     <div class="kpi-grid">
       <div class="kpi"><div class="label">총 유효 응답</div><div class="value blue">170<span class="unit">명</span></div><div class="sub">전체 171 · 불완전 1 제외</div></div>
       <div class="kpi featured"><div class="label">1위 최다 선택</div><div class="value amber">QR 코드</div><div class="sub">83.5% · 142명</div></div>
@@ -301,7 +301,7 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
   </section>
 
   <section class="section fade-up">
-    <div class="section-head-wrap"><div class="section-head"><span class="section-num">03 ·</span><h2 class="section-title">선호도 분포</h2></div></div>
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">03</span><h2 class="section-title">선호도 분포</h2></div></div>
     <div class="grid-2">
       <div class="panel">
         <div class="panel-head">
@@ -336,7 +336,7 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
   </section>
 
   <section class="section fade-up">
-    <div class="section-head-wrap"><div class="section-head"><span class="section-num">04 ·</span><h2 class="section-title">순위별 분포 매트릭스</h2></div></div>
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">04</span><h2 class="section-title">순위별 분포 매트릭스</h2></div></div>
     <div class="panel">
       <div class="panel-head">
         <div><h3>옵션별 1위 · 2위 · 3위 분포</h3><div class="desc">평균 순위가 낮을수록 선호도가 높다.</div></div>
@@ -381,7 +381,7 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
   </section>
 
   <section class="section fade-up">
-    <div class="section-head-wrap"><div class="section-head"><span class="section-num">05 ·</span><h2 class="section-title">쌍대비교 (Condorcet)</h2></div></div>
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">05</span><h2 class="section-title">쌍대비교 (Condorcet)</h2></div></div>
     <div class="panel">
       <div class="panel-head">
         <div><h3>두 옵션만 놓고 비교했을 때의 승부</h3><div class="desc">어떤 상대와 붙어도 이기는 옵션이 Condorcet 승자다.</div></div>
@@ -405,14 +405,14 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
 
   <section class="section fade-up">
     <div class="section-head-wrap">
-      <div class="section-head"><span class="section-num">06 ·</span><h2 class="section-title">시간대별 응답 추이</h2></div>
+      <div class="section-head"><span class="section-num">06</span><h2 class="section-title">시간대별 응답 추이</h2></div>
       <p class="section-desc">5/10 오후 15~17시 피크 + 5/11 오전 07~10시 2차 피크</p>
     </div>
     <div class="panel"><div class="chart-wrap timeline"><canvas id="chart-timeline"></canvas></div></div>
   </section>
 
   <section class="section fade-up">
-    <div class="section-head-wrap"><div class="section-head"><span class="section-num">07 ·</span><h2 class="section-title">응답자 합의도</h2></div></div>
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">07</span><h2 class="section-title">응답자 합의도</h2></div></div>
     <div class="panel consensus-panel">
       <div class="consensus-head"><div class="consensus-eyebrow">응답자 170명의 합의 수준</div><div class="consensus-title">Kendall's W = <span class="amber">0.55</span></div></div>
       <div class="gauge-wrap">
@@ -428,7 +428,7 @@ body{font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;background
   </section>
 
   <section class="section fade-up">
-    <div class="section-head-wrap"><div class="section-head"><span class="section-num">08 ·</span><h2 class="section-title">실무 적용안</h2></div></div>
+    <div class="section-head-wrap"><div class="section-head"><span class="section-num">08</span><h2 class="section-title">실무 적용안</h2></div></div>
     <div class="rec-card">
       <div class="rec-tag">현장 배치 권장</div>
       <div class="rec-flow">
